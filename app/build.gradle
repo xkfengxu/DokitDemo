@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'AndResGuard'
-apply plugin: 'com.github.dcendents.android-maven'
-group='com.github.xkfengxu'
+//apply plugin: 'com.github.dcendents.android-maven'
+//group='com.github.xkfengxu'
 
 android {
     signingConfigs {

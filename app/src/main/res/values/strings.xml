@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">DokitDemo</string>
+    <string name="home_hint">接入doraemonkit，尝试使用，就是界面上的六边形悬浮窗</string>
+    <string name="open_float_window">打开doraemonkit</string>
+    <string name="test_aidl">AIDL测试</string>
+    <string name="test_aidl_no_install">AIDL测试(未安装测试服务)</string>
+    <string name="get_book_list">获取书籍列表</string>
+    <string name="add_book">InOut 添加书籍</string>
+    <string name="test_arouter">测试arouter</string>
+    <string name="test_show">%1$s\n%2$s</string>
+</resources>

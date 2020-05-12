@@ -1,14 +1,17 @@
 package com.example.dokitdemo;
 
-import java.io.IOException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.List;
 
-import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -16,7 +19,7 @@ import android.os.RemoteException;
 import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.RequiresApi;
+import androidx.core.content.FileProvider;
 
 import com.alibaba.android.arouter.facade.annotation.Route;
 import com.alibaba.android.arouter.launcher.ARouter;
@@ -64,13 +67,16 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //安装bookService,暂时未成功，需要手动安装
-        installAPK("bookservice.apk");
+        installApp();
         setContentView(R.layout.activity_main);
         findViewById(R.id.tv_switch_doraemon).setOnClickListener(this);
         findViewById(R.id.tv_get_book_list).setOnClickListener(this);
         findViewById(R.id.tv_add_book_inOut).setOnClickListener(this);
         findViewById(R.id.tv_test_arouter).setOnClickListener(this);
         bookInfo = findViewById(R.id.tv_book_info);
+    }
+
+    private void checkService() {
         //检查服务应用是否存在
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -86,19 +92,53 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         }
     }
 
-    //Install the specified apk
-    public void installAPK(String apkFileName) {
-        //获取 assets 中文件安装后的实际路径
-        String apk_path = this.getApplicationContext().getFilesDir() + "/" + apkFileName;
-//        runCommand("adb root");
-        //安装的 apk 文件需要读写权限，故赋予读写权限
-//        runCommand("adb shell su -c chmod 666 " + apk_path);
-        //使用 pm 安装文件
+    @Override
+    protected void onResume() {
+        checkService();
+        super.onResume();
+    }
+
+    private boolean isAppInstalled() {
         try {
-            Runtime.getRuntime().exec(" pm install " + apk_path);
-        } catch (IOException e) {
+            getPackageManager().getPackageInfo("com.example.bookservice", PackageManager.GET_ACTIVITIES);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    private void installApp() {
+        if (isAppInstalled()) {
+            checkService();
+            return;
+        }
+        AssetManager assetManager = getAssets();
+        InputStream inputStream;
+        String filename = getBaseContext().getExternalFilesDir(null) + "/" + "bookservice.apk";
+        try {
+            inputStream = assetManager.open("bookservice.apk");
+            File file = new File(filename);
+            FileOutputStream fos = new FileOutputStream(file);
+            byte[] temp = new byte[1024];
+            int i;
+            while ((i = inputStream.read(temp)) > 0) {
+                fos.write(temp, 0, i);
+            }
+            fos.close();
+            inputStream.close();
+        } catch (Exception e) {
             e.printStackTrace();
         }
+        Intent intent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Uri uriForFile = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", new File(filename));
+            intent.setDataAndType(uriForFile, "application/vnd.android.package-archive");
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } else {
+            intent.setDataAndType(Uri.fromFile(new File(filename)), "application/vnd.android.package-archive");
+        }
+        startActivity(intent);
     }
 
     @Override
